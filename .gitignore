@@ -1,0 +1,6 @@
+# 忽略 Python 编译文件和目录
+summary_code.txt
+__pycache__/
+*.pyc
+logs/logs_weights/
+ttf/

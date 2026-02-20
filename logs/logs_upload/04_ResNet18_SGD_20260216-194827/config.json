@@ -1,0 +1,29 @@
+{
+    "GPU_model": "NVIDIA GeForce RTX 3080",
+    "exp_time": "20260216-194827",
+    "device": "cuda",
+    "exp_name": "04_ResNet18_SGD_20260216-194827",
+    "model_name": "ResNet18",
+    "save_interval": 10,
+    "train_path": "/root/autodl-tmp/backbone_exp/datasets/Classification/ImageNet/train",
+    "val_path": "/root/autodl-tmp/backbone_exp/datasets/Classification/ImageNet/val",
+    "model_path": null,
+    "debug_mode": null,
+    "input_size": 224,
+    "batch_size": 256,
+    "num_workers": 8,
+    "persistent_workers": true,
+    "epochs": 120,
+    "optimizer": {
+        "type": "SGD",
+        "lr": 0.1,
+        "lr_scheduler": {
+            "type": "StepLR",
+            "step_size": 30,
+            "gamma": 0.1
+        },
+        "momentum": 0.9,
+        "weight_decay": 0.0001
+    },
+    "loss_fn": "CrossEntropyLoss"
+}
