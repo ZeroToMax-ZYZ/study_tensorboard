@@ -57,8 +57,8 @@ def save_csv(metrics, csv_path):
 
 def plot_metrics(cfg, csv_path, plt_path):
     # 1. 设置全局字体为 Times New Roman
-    plt.rcParams["font.family"] = "serif"
-    plt.rcParams["font.serif"] = ["Times New Roman"]
+    # plt.rcParams["font.family"] = "serif"
+    # plt.rcParams["font.serif"] = ["Times New Roman"]
     
     epochs = []
     train_losses, val_losses = [], []
@@ -138,7 +138,7 @@ def save_model(model, cfg, csv_path, model_path, metrics, state=None):
     if val_top1 >= best_val_top1:
         state.best_top1 = val_top1
         torch.save(model.state_dict(), os.path.join(model_path, "best_model.pth"))
-        print(f"✅ Best model saved with Val Top-1 Accuracy: {val_top1:.2f}%")
+        print(f"✅ Best model saved with Val Top-1 Accuracy: {val_top1*100:.2f}%")
     
     # every save_interval
     if (metrics["epoch"] % cfg["save_interval"]) == 0:
