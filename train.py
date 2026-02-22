@@ -5,7 +5,7 @@ from dataset.build_dataset import build_dataset
 from utils.optim_lr_factory import build_optimizer, build_lr_scheduler, build_loss_fn
 from utils.fit_one_epoch import fit_one_epoch
 from utils.logger import save_logger, save_config
-
+from torch.utils.tensorboard import SummaryWriter
 from icecream import ic
 import os
 import time
@@ -18,16 +18,16 @@ def base_config():
         "GPU_model": GPU_model,
         "exp_time": exp_time,
         "device": "cuda" if torch.cuda.is_available() else "cpu",
-        "exp_name": "04_ResNet18_SGD",
-        "model_name": "ResNet18",
+        "exp_name": "05_AlexNet_Tensorboard",
+        "model_name": "AlexNet",
         "save_interval": 10,
-        # "train_path": r'D:\1AAAAAstudy\python_base\pytorch\all_dataset\image_classification\ImageNet\ImageNet100\train',
-        # "val_path": r"D:\1AAAAAstudy\python_base\pytorch\all_dataset\image_classification\ImageNet\ImageNet100\val",
-        "train_path": r"/root/autodl-tmp/backbone_exp/datasets/Classification/ImageNet/train",
-        "val_path": r"/root/autodl-tmp/backbone_exp/datasets/Classification/ImageNet/val",
+        "train_path": r'D:\1AAAAAstudy\python_base\pytorch\all_dataset\image_classification\ImageNet\ImageNet100\train',
+        "val_path": r"D:\1AAAAAstudy\python_base\pytorch\all_dataset\image_classification\ImageNet\ImageNet100\val",
+        # "train_path": r"/root/autodl-tmp/backbone_exp/datasets/Classification/ImageNet/train",
+        # "val_path": r"/root/autodl-tmp/backbone_exp/datasets/Classification/ImageNet/val",
         "model_path": None, # 加载训练好的权重,若为None则不加载
         # test model 
-        "debug_mode": None, # 当debug_mode为None时,表示正常模式; 否则为debug模式,使用部分数据训练
+        "debug_mode": 0.1, # 当debug_mode为None时,表示正常模式; 否则为debug模式,使用部分数据训练
         "input_size": 224,
         "batch_size": 256,
         "num_workers": 8,
@@ -55,7 +55,6 @@ def base_config():
         #     },
         #     "weight_decay": 1e-4,
         # }
-    
     }
 
     config["exp_name"] += str("_" + exp_time)
@@ -65,7 +64,9 @@ def train():
     state = None
     cfg = base_config()
     save_config(cfg)
-
+    # build tensorboard logger
+    tb_path = os.path.join("logs", "logs_tensorboard", cfg["exp_name"])
+    writer = SummaryWriter(log_dir=tb_path)
     model = build_model(cfg).to(cfg["device"])
     # 加载训练好的权重
     if cfg["model_path"] is not None:
@@ -81,9 +82,14 @@ def train():
         metrics = fit_one_epoch(
             epoch, cfg, model, train_loader, val_loader, loss_fn, optimizer, lr_scheduler
         )
+        # tensorboard logger
+        for key, value in metrics.items():
+            writer.add_scalar(key, value, epoch)
         # save logs and model
-        save_logger(model, metrics, cfg, state)
-        
+        state = save_logger(model, metrics, cfg, state)
+    
+    # close tensorboard logger
+    writer.close()
 
 if __name__ == "__main__":
     if os.name == 'nt':  # 'nt'代表Windows系统
