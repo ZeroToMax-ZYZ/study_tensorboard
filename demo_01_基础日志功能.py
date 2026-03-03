@@ -5,17 +5,17 @@ from torch.utils.tensorboard import SummaryWriter
 
 # 1. 初始化 Writer，定义日志保存的目录
 # 这里我们把日志存放在一个叫 "runs/my_first_experiment" 的文件夹下
-writer = SummaryWriter(log_dir="runs/my_first_experiment")
+writer = SummaryWriter(log_dir="runs_2026_03_04/demo_02_scalar")
 
 print("开始模拟炼丹...")
 total_epochs = 100
 
 for epoch in range(total_epochs):
     # 模拟数据：Loss 呈指数衰减（加一点随机噪声模拟真实震荡）
-    simulated_loss = 5.0 * math.exp(-0.05 * epoch) + random.uniform(-0.2, 0.2)
+    simulated_loss = 4.0 * math.exp(-0.05 * epoch) + random.uniform(-0.2, 0.2)
     
     # 模拟数据：Accuracy 逐渐逼近 100%（同样加点噪声）
-    simulated_acc = 100.0 - 80.0 * math.exp(-0.08 * epoch) + random.uniform(-1.5, 1.5)
+    simulated_acc = 90.0 - 80.0 * math.exp(-0.08 * epoch) + random.uniform(-1.5, 1.5)
 
     # 2. 将数据写入 TensorBoard
     # 参数顺序：("图表名称", Y轴的具体数值, X轴的步数/Epoch)
