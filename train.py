@@ -5,6 +5,8 @@ from dataset.build_dataset import build_dataset
 from utils.optim_lr_factory import build_optimizer, build_lr_scheduler, build_loss_fn
 from utils.fit_one_epoch import fit_one_epoch
 from utils.logger import save_logger, save_config
+from utils.logger_tensorb import base_tensorb_logger, epoch_tensorb_logger, flatten_config
+
 from torch.utils.tensorboard import SummaryWriter
 from icecream import ic
 import os
@@ -18,21 +20,21 @@ def base_config():
         "GPU_model": GPU_model,
         "exp_time": exp_time,
         "device": "cuda" if torch.cuda.is_available() else "cpu",
-        "exp_name": "05_AlexNet_Tensorboard",
-        "model_name": "AlexNet",
+        "exp_name": "08_YOLOv2_backbone_Tensorboard",
+        "model_name": "YOLOv2_backbone",
         "save_interval": 10,
-        "train_path": r'D:\1AAAAAstudy\python_base\pytorch\all_dataset\image_classification\ImageNet\ImageNet100\train',
-        "val_path": r"D:\1AAAAAstudy\python_base\pytorch\all_dataset\image_classification\ImageNet\ImageNet100\val",
-        # "train_path": r"/root/autodl-tmp/backbone_exp/datasets/Classification/ImageNet/train",
-        # "val_path": r"/root/autodl-tmp/backbone_exp/datasets/Classification/ImageNet/val",
+        # "train_path": r'D:\1AAAAAstudy\python_base\pytorch\all_dataset\image_classification\ImageNet\ImageNet100\train',
+        # "val_path": r"D:\1AAAAAstudy\python_base\pytorch\all_dataset\image_classification\ImageNet\ImageNet100\val",
+        "train_path": r"/root/autodl-tmp/backbone_exp/datasets/Classification/ImageNet/train",
+        "val_path": r"/root/autodl-tmp/backbone_exp/datasets/Classification/ImageNet/val",
         "model_path": None, # 加载训练好的权重,若为None则不加载
         # test model 
         "debug_mode": 0.1, # 当debug_mode为None时,表示正常模式; 否则为debug模式,使用部分数据训练
         "input_size": 224,
-        "batch_size": 256,
+        "batch_size": 128,
         "num_workers": 8,
         "persistent_workers": True, # 进程持久化,针对win平台
-        "epochs": 120,
+        "epochs": 5,
         "optimizer": {
             "type": "SGD",
             "lr": 0.1,
@@ -66,28 +68,40 @@ def train():
     save_config(cfg)
     # build tensorboard logger
     tb_path = os.path.join("logs", "logs_tensorboard", cfg["exp_name"])
-    writer = SummaryWriter(log_dir=tb_path)
+    autudl_tb_path = os.path.join("/root/tf-logs", cfg["exp_name"])
+    writer = SummaryWriter(log_dir=autudl_tb_path)
+
     model = build_model(cfg).to(cfg["device"])
     # 加载训练好的权重
     if cfg["model_path"] is not None:
         model.load_state_dict(torch.load(cfg["model_path"], map_location=cfg["device"]))
     
-    train_loader, val_loader = build_dataset(cfg)
+    train_loader, val_loader, train_dataset, val_dataset = build_dataset(cfg)
 
     optimizer = build_optimizer(model, cfg=cfg)
     lr_scheduler = build_lr_scheduler(optimizer, cfg)
     loss_fn = build_loss_fn(cfg)
-
+    # 调用tensorboard记录初始状态：数据增强之后的图像， 模型的结构，当前的训练参数
+    base_tensorb_logger(writer, train_dataset, val_dataset, model, cfg)
+    best_val_top1 = 0.0
     for epoch in range(cfg["epochs"]):
         metrics = fit_one_epoch(
             epoch, cfg, model, train_loader, val_loader, loss_fn, optimizer, lr_scheduler
         )
+        # 2. 更新最高 val_top1
+        if metrics["val_top1"] > best_val_top1:
+            best_val_top1 = metrics["val_top1"]
         # tensorboard logger
-        for key, value in metrics.items():
-            writer.add_scalar(key, value, epoch)
+        epoch_tensorb_logger(writer, metrics, epoch)
         # save logs and model
         state = save_logger(model, metrics, cfg, state)
-    
+    # 3. 训练完全结束后，清洗 cfg 并记录 hparams
+    flat_cfg = flatten_config(cfg)
+    writer.add_hparams(
+        hparam_dict=flat_cfg, 
+        metric_dict={"hparam/best_val_top1": best_val_top1},
+        run_name="."
+    )
     # close tensorboard logger
     writer.close()
 

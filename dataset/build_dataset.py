@@ -42,4 +42,4 @@ def build_dataset(cfg):
         prefetch_factor=2,
     )
 
-    return train_loader, val_loader
+    return train_loader, val_loader, train_dataset, val_dataset
